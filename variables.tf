@@ -12,12 +12,12 @@ variable "location" {
   default = "nbg1"
 }
 variable "worker_nodes" {
-  type = integer
+  type = number
   default =2
 }
 
 variable "master_nodes" {
-  type = integer
+  type = number
   default =2
 }
 
