@@ -1,12 +1,19 @@
+export DEBIAN_FRONTEND=noninteractive
 mkdir /etc/docker/
 echo '{"exec-opts":
    ["native.cgroupdriver=systemd"]
 }' > /etc/docker/daemon.json
-sudo apt update && sudo DEBIAN_FRONTEND=noninteractive apt upgrade -y --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" && sudo apt install docker.io -y
-sudo systemctl enable docker.service
-curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add
-sudo apt-add-repository "deb http://apt.kubernetes.io/ kubernetes-xenial main"
-sudo apt install kubeadm -y
+apt update 
+apt upgrade -y --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" 
+apt install docker.io -y
+systemctl enable docker.service
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add
+mkdir /etc/containerd
+containerd config default > /etc/containerd/config.toml
+sed -e "s#SystemdCgroup = false#SystemdCgroup = true#"  -i /etc/containerd/config.toml
+systemctl restart containerd
+apt-add-repository -y "deb http://apt.kubernetes.io/ kubernetes-xenial main"
+apt install kubeadm -y
 echo $MASTER_IP > /tmp/master_ip
 #sudo kubeadm init --apiserver-advertise-address 10.0.0.2 \
 #  --service-cidr 10.96.0.0/16   --pod-network-cidr 10.244.0.0/16 \

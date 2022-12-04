@@ -101,6 +101,7 @@ resource "hcloud_server" "worker" {
   connection {
     host        = self.ipv4_address
     type        = "ssh"
+    user        = "root"
     private_key = file(local_file.private_key.filename)
   }
   provisioner "file" {
@@ -115,7 +116,6 @@ resource "hcloud_server" "worker" {
 
 }
 
-
 resource null_resource "master_init" {
   triggers = {
     cluster_instance_ids = "${join(",", [hcloud_server.master[0].id])}"
@@ -126,17 +126,21 @@ resource null_resource "master_init" {
     private_key = file(local_file.private_key.filename)
   }
   provisioner "file" {
-    source      = "${path.module}/secrets/kubeadm.config"
+    source     = "${path.module}/kubeadm.config"
     destination = "/tmp/kubeadm.config"
   }
 
   provisioner "remote-exec" {
-    inline = ["sudo kubeadm init --config /tmp/kubeadm.config --ignore-preflight-errors=NumCPU",
+    #--config=/tmp/kubeadm.config
+    #--pod-network-cidr=10.244.0.0/16
+    inline = [
+      "sudo kubeadm init --config=/tmp/kubeadm.config  --ignore-preflight-errors=NumCPU",
       "mkdir -p $HOME/.kube",
       "sudo cp /etc/kubernetes/admin.conf $HOME/.kube/config ",
       "sudo chown $(id -u):$(id -g) $HOME/.kube/config",
       "kubeadm token create --print-join-command > /tmp/kubeadm_join",
-      "kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml"
+      "kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.0/manifests/canal.yaml",
+      
       ]
   }
   provisioner "local-exec" {
